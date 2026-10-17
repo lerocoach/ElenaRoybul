@@ -1,0 +1,382 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<title>СЭМ — тренажёр</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+:root{
+  --bg:#f2f2f7; --surface:#ffffff; --surface2:#f7f7fa; --text:#1c1c1e; --muted:#8e8e93;
+  --line:rgba(60,60,67,.12); --accent:#007aff; --accent-soft:rgba(0,122,255,.10);
+  --ok:#34c759; --ok-soft:rgba(52,199,89,.12); --err:#ff3b30; --err-soft:rgba(255,59,48,.10);
+  --gold:#ff9f0a; --shadow:0 1px 2px rgba(0,0,0,.04),0 8px 24px rgba(0,0,0,.06);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#000000; --surface:#1c1c1e; --surface2:#2c2c2e; --text:#f2f2f7; --muted:#8e8e93;
+    --line:rgba(255,255,255,.10); --accent:#0a84ff; --accent-soft:rgba(10,132,255,.18);
+    --ok:#30d158; --ok-soft:rgba(48,209,88,.16); --err:#ff453a; --err-soft:rgba(255,69,58,.16);
+    --shadow:none;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#000000; --surface:#1c1c1e; --surface2:#2c2c2e; --text:#f2f2f7; --muted:#8e8e93;
+  --line:rgba(255,255,255,.10); --accent:#0a84ff; --accent-soft:rgba(10,132,255,.18);
+  --ok:#30d158; --ok-soft:rgba(48,209,88,.16); --err:#ff453a; --err-soft:rgba(255,69,58,.16);
+  --shadow:none;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--text)}
+body{font:16px/1.4 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif;
+  min-height:100vh;padding-bottom:calc(84px + env(safe-area-inset-bottom))}
+.wrap{max-width:520px;margin:0 auto;padding:16px}
+.top{display:flex;align-items:center;justify-content:space-between;margin:4px 2px 12px}
+.brand{font-weight:700;font-size:13px;letter-spacing:.08em;color:var(--muted);text-transform:uppercase}
+.counter{font-weight:600;font-size:15px;color:var(--muted);font-variant-numeric:tabular-nums}
+.bar{height:6px;border-radius:3px;background:var(--line);overflow:hidden;margin-bottom:18px}
+.bar>i{display:block;height:100%;background:var(--accent);border-radius:3px;transition:width .5s cubic-bezier(.2,.8,.2,1)}
+.card{background:var(--surface);border-radius:20px;padding:20px;box-shadow:var(--shadow);margin-bottom:14px}
+.tag{display:inline-block;font-size:12px;font-weight:600;color:var(--accent);background:var(--accent-soft);
+  padding:4px 10px;border-radius:999px;margin-bottom:12px}
+.situation{font-size:21px;line-height:1.35;font-weight:600;margin:0 0 14px;letter-spacing:-.01em}
+.question{color:var(--muted);font-size:15px;margin:0}
+.answers{display:grid;gap:10px;margin-bottom:14px}
+.ans{appearance:none;border:1.5px solid var(--line);background:var(--surface);color:var(--text);
+  font:inherit;font-size:16px;text-align:left;padding:15px 16px;border-radius:16px;cursor:pointer;
+  display:flex;gap:12px;align-items:flex-start;transition:transform .12s,border-color .2s,background .2s}
+.ans:active{transform:scale(.98)}
+.ans .n{flex:none;width:24px;height:24px;border-radius:50%;background:var(--surface2);color:var(--muted);
+  font-size:13px;font-weight:600;display:grid;place-items:center;margin-top:1px}
+.ans[disabled]{cursor:default}
+.ans.ok{border-color:var(--ok);background:var(--ok-soft)}
+.ans.ok .n{background:var(--ok);color:#fff}
+.ans.bad{border-color:var(--err);background:var(--err-soft)}
+.ans.bad .n{background:var(--err);color:#fff}
+.ans.dim{opacity:.45}
+.fb{border-radius:18px;padding:16px 18px;margin-bottom:14px;animation:rise .35s cubic-bezier(.2,.8,.2,1)}
+.fb.ok{background:var(--ok-soft)} .fb.bad{background:var(--err-soft)} .fb.info{background:var(--accent-soft)}
+.fb h3{margin:0 0 6px;font-size:17px}
+.fb p{margin:6px 0 0;font-size:15px}
+.fb .q{border-left:3px solid currentColor;padding-left:10px;opacity:.85}
+.fb .trap{font-weight:600}
+@keyframes rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.btn{appearance:none;border:0;width:100%;font:inherit;font-weight:600;font-size:17px;padding:15px;
+  border-radius:14px;background:var(--accent);color:#fff;cursor:pointer;transition:transform .12s}
+.btn:active{transform:scale(.98)}
+.btn.ghost{background:transparent;color:var(--accent);font-weight:500;font-size:15px;padding:12px}
+.btn+.btn{margin-top:8px}
+.center{text-align:center}
+.big{font-size:44px;line-height:1;margin:6px 0 10px}
+.h1{font-size:24px;font-weight:700;letter-spacing:-.02em;margin:0 0 8px}
+.lead{color:var(--muted);margin:0 0 4px}
+
+/* progress */
+.ringbox{display:flex;align-items:center;gap:18px}
+.ring{position:relative;width:96px;height:96px;flex:none}
+.ring svg{transform:rotate(-90deg)}
+.ring .lv{position:absolute;inset:0;display:grid;place-items:center;text-align:center}
+.ring .lv b{font-size:28px;display:block;line-height:1}
+.ring .lv span{font-size:11px;color:var(--muted)}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+.tile{background:var(--surface);border-radius:18px;padding:16px;box-shadow:var(--shadow)}
+.tile .ic{font-size:20px}
+.tile b{display:block;font-size:26px;margin:6px 0 2px;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.tile span{font-size:13px;color:var(--muted)}
+.sec{font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin:20px 4px 8px}
+.week{display:flex;justify-content:space-between;margin-top:14px}
+.day{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
+.dot{width:30px;height:30px;border-radius:50%;background:var(--surface2);display:grid;place-items:center;font-size:13px}
+.dot.on{background:var(--gold);color:#fff}
+.dot.today{box-shadow:0 0 0 2px var(--accent)}
+.trow{display:flex;align-items:center;gap:10px;padding:8px 0}
+.trow+.trow{border-top:1px solid var(--line)}
+.trow .nm{flex:1;font-size:15px}
+.trow .tb{width:90px;height:6px;border-radius:3px;background:var(--line);overflow:hidden}
+.trow .tb i{display:block;height:100%;background:var(--err)}
+.trow .ct{width:22px;text-align:right;color:var(--muted);font-variant-numeric:tabular-nums}
+
+/* tabbar */
+.tabs{position:fixed;left:0;right:0;bottom:0;background:color-mix(in srgb,var(--surface) 88%,transparent);
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid var(--line);
+  display:flex;justify-content:center;padding:8px 16px calc(8px + env(safe-area-inset-bottom))}
+.tabs button{appearance:none;border:0;background:none;font:inherit;flex:1;max-width:200px;color:var(--muted);
+  display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;font-weight:500;cursor:pointer;padding:4px}
+.tabs button svg{width:26px;height:26px}
+.tabs button.on{color:var(--accent)}
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <section id="train"></section>
+  <section id="progress" class="hidden"></section>
+</div>
+<nav class="tabs">
+  <button id="t-train" class="on" onclick="tab('train')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0-3.5 10.9V17h7v-3.1A6 6 0 0 0 12 3z"/><path d="M9.5 20.5h5"/></svg>
+    Тренировка</button>
+  <button id="t-progress" onclick="tab('progress')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 20V12M12 20V5M19 20v-5"/></svg>
+    Прогресс</button>
+</nav>
+
+<script>
+/* ---------- Кейсы (демо; в рабочей версии приходят из API бота) ---------- */
+const CASES = [
+ {cat:"Работа", s:"Руководитель написал: «Зайди ко мне в 15:00».", q:"Что здесь факт?",
+  f:"Руководитель позвал меня к себе в 15:00",
+  i:[["Меня хотят уволить","Катастрофизация","Ум нарисовал худший сценарий, которого ещё не случилось."],
+     ["Он недоволен моей работой","Чтение мыслей","Ты решил(а), что у него в голове, хотя он этого не говорил."]]},
+ {cat:"Дружба", s:"Подруга прочитала сообщение и не отвечает уже три часа.", q:"Какой вариант — чистый факт?",
+  f:"Сообщение прочитано, ответа нет три часа",
+  i:[["Она на меня обиделась","Чтение мыслей","Причину молчания ты пока не знаешь — её додумал ум."],
+     ["Я ей не важна","Персонализация","Чужое молчание ум сделал историей про тебя."]]},
+ {cat:"Деньги", s:"Клиент пока не оплатил счёт.", q:"Что здесь факт?",
+  f:"Оплата по счёту ещё не поступила",
+  i:[["Видимо, денег снова не будет","Катастрофизация","Одна задержка превратилась в прогноз на будущее."],
+     ["Клиент не хочет платить","Чтение мыслей","Намерение клиента — догадка, а не событие."]]},
+ {cat:"Отношения", s:"Партнёр пришёл домой и сразу ушёл в другую комнату.", q:"Что увидела бы камера?",
+  f:"Партнёр пришёл и ушёл в другую комнату",
+  i:[["Он меня избегает","Чтение мыслей","Камера видит шаги, а не мотивы."],
+     ["У нас всё плохо","Всё или ничего","Один вечер ум растянул на все отношения."]]},
+ {cat:"Работа", s:"На совещании коллега заговорил, пока я ещё не закончил(а) фразу.", q:"Где здесь факт?",
+  f:"Коллега заговорил до конца моей фразы",
+  i:[["Он меня не уважает","Чтение мыслей","Уважение не видно на записи — это вывод."],
+     ["Меня никогда не слушают","Сверхобобщение","Один эпизод ум превратил в «никогда»."]]},
+ {cat:"Соцсети", s:"Под новым постом за час — два лайка.", q:"Что можно подтвердить без догадок?",
+  f:"За час под постом два лайка",
+  i:[["Мой контент никому не нужен","Сверхобобщение","Час и один пост — слишком мало для «никому»."],
+     ["Я бездарность","Ярлык на человека","Цифра под постом — не оценка тебе как человеку."]]},
+ {cat:"Дети", s:"Ребёнок принёс двойку по математике.", q:"Что здесь факт?",
+  f:"Ребёнок получил двойку по математике",
+  i:[["Он не способен к математике","Ярлык на человека","Одна оценка — ещё не диагноз способностям."],
+     ["Я плохой родитель","Персонализация","Оценку ребёнка ум сделал приговором тебе."]]},
+ {cat:"Здоровье", s:"Врач сказал: «Нужно сдать дополнительные анализы».", q:"Убери вывод — что останется?",
+  f:"Врач назначил дополнительные анализы",
+  i:[["Со мной что-то серьёзное","Катастрофизация","Анализы — это проверка, а не диагноз."],
+     ["Врач что-то скрывает","Чтение мыслей","О скрытом ум догадался сам."]]},
+ {cat:"Работа", s:"Утром начальник прошёл мимо и не поздоровался.", q:"Какой вариант — чистый факт?",
+  f:"Начальник прошёл мимо, не поздоровавшись",
+  i:[["Он злится на меня","Персонализация","Он мог просто задуматься — причина не про тебя."],
+     ["Теперь весь день испорчен","Катастрофизация","Одна секунда утром ещё не решила весь день."]]},
+ {cat:"Семья", s:"Мама позвонила третий раз за день.", q:"Что здесь факт?",
+  f:"Мама позвонила три раза за день",
+  i:[["Она меня контролирует","Чтение мыслей","Зачем она звонит — пока догадка."],
+     ["Она никогда не даст мне жить своей жизнью","Всё или ничего","Три звонка ум превратил в «никогда»."]]}
+];
+const MOTIVATION_STEP = 5;   // в боте 10; в демо 5, чтобы экран был виден
+const DAILY_GOAL = 10, CASES_PER_LEVEL = 10, MAX_LEVEL = 15;
+const RETRY_HINTS = ["Факт — то, что можно увидеть или подтвердить. Попробуй ещё раз.",
+  "Проверь: это то, что произошло, или то, что ты об этом подумал(а)?"];
+const MOTIVATIONS = ["Ум добавляет смысл быстрее, чем мы замечаем. Ты уже начинаешь это видеть.",
+  "Каждый кейс — маленькая пауза между событием и реакцией. Она растёт.",
+  "Замечать — уже половина навыка. Продолжим?"];
+const CLOSINGS = [["Хорошая работа на сегодня.","Сегодня заметь хотя бы один момент, где мысль пришла раньше факта."],
+  ["Пауза — тоже часть тренировки.","Навык закрепляется между занятиями."]];
+
+/* ---------- Telegram ---------- */
+const tg = window.Telegram && Telegram.WebApp && Telegram.WebApp.initData ? Telegram.WebApp : null; // только внутри Telegram
+const haptic = t => { try { tg && tg.HapticFeedback && tg.HapticFeedback.notificationOccurred(t); } catch(e){} };
+if (tg) {
+  tg.ready(); tg.expand();
+  if (tg.colorScheme) document.documentElement.dataset.theme = tg.colorScheme;
+  const p = tg.themeParams || {}, r = document.documentElement.style;
+  if (p.secondary_bg_color) r.setProperty('--bg', p.secondary_bg_color);
+  if (p.bg_color) r.setProperty('--surface', p.bg_color);
+  if (p.text_color) r.setProperty('--text', p.text_color);
+  if (p.hint_color) r.setProperty('--muted', p.hint_color);
+  if (p.button_color) r.setProperty('--accent', p.button_color);
+  try { tg.setHeaderColor('secondary_bg_color'); } catch(e){}
+}
+
+/* ---------- Состояние (демо: в браузере; в рабочей версии — в API бота) ---------- */
+const KEY = 'sem-miniapp-v1';
+const fresh = () => ({idx:0, round:1, done:0, firstTry:0, wrongStreak:0, days:[], today:{d:'',n:0}, traps:{}, lastClosing:-1});
+let S = fresh();
+try { const raw = localStorage.getItem(KEY); if (raw) S = Object.assign(fresh(), JSON.parse(raw)); } catch(e){}
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e){} };
+
+let phase = 'question';      // question | result | retry | motivation | final | pause
+let attempt = 1, order = [], picked = [], fbHTML = '';
+
+const dkey = (d=new Date()) => d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const plural = (n, f) => f[(n%10==1&&n%100!=11)?0:(n%10>=2&&n%10<=4&&(n%100<10||n%100>=20))?1:2];
+const esc = s => s.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const shuffle = () => { order = [0,1,2]; for (let i=2;i>0;i--){const j=Math.floor(Math.random()*(i+1)); [order[i],order[j]]=[order[j],order[i]];} };
+const answerText = (c,k) => k===0 ? c.f : c.i[k-1][0];
+
+function markActivity(){
+  const t = dkey();
+  if (!S.days.includes(t)) S.days.push(t);
+  if (S.today.d !== t) S.today = {d:t, n:0};
+  S.today.n++;
+}
+function streak(){
+  const set = new Set(S.days); let n = 0; const d = new Date();
+  if (!set.has(dkey(d))) d.setDate(d.getDate()-1);
+  while (set.has(dkey(d))) { n++; d.setDate(d.getDate()-1); }
+  return n;
+}
+function rhythmLine(){
+  const n = streak();
+  return n >= 2 ? `${n} ${plural(n,['день','дня','дней'])} в ритме ясности ✦` : 'Возвращайся позже, будь в ритме ясности!';
+}
+
+/* ---------- Тренировка ---------- */
+function renderTrain(){
+  const el = document.getElementById('train'), total = CASES.length;
+  const head = `<div class="top"><span class="brand">СЭМ · круг ${S.round}</span>
+    <span class="counter">${phase==='motivation' ? S.idx : Math.min(S.idx+1,total)}/${total}</span></div>
+    <div class="bar"><i style="width:${S.idx/total*100}%"></i></div>`;
+
+  if (phase === 'final') {
+    el.innerHTML = head + `<div class="card center"><div class="big">🏁</div>
+      <p class="h1">${total} кейсов позади</p>
+      <p class="lead">Ты научился(ась) останавливаться между событием и реакцией и отделять то, что произошло, от того, что добавил ум.</p></div>
+      <button class="btn" onclick="newRound()">🔁 Новый круг</button>
+      <button class="btn ghost" onclick="tab('progress')">Посмотреть прогресс</button>`;
+    return;
+  }
+  if (phase === 'motivation') {
+    el.innerHTML = head + `<div class="card center"><div class="big">✦</div>
+      <p class="h1">${S.idx} из ${total}</p>
+      <p class="lead">${MOTIVATIONS[(S.idx/MOTIVATION_STEP-1)%MOTIVATIONS.length]}</p></div>
+      <button class="btn" onclick="phase='question';newCase()">➡️ Продолжить</button>
+      <button class="btn ghost" onclick="pause()">⏸ На сегодня</button>`;
+    return;
+  }
+  if (phase === 'pause') {
+    const c = CLOSINGS[S.lastClosing];
+    el.innerHTML = `<div class="top"><span class="brand">СЭМ</span></div>
+      <div class="card center"><div class="big">🌿</div><p class="h1">${c[0]}</p>
+      <p class="lead">${c[1]}</p><p style="margin-top:14px;font-weight:600">${rhythmLine()}</p></div>
+      <button class="btn" onclick="phase='question';newCase()">▶️ Продолжить</button>
+      <button class="btn ghost" onclick="tab('progress')">📊 Прогресс</button>`;
+    return;
+  }
+
+  const c = CASES[S.idx], locked = phase === 'result';
+  const btns = order.map((k,pos) => {
+    let cls = '';
+    if (picked.includes(k)) cls = k===0 ? 'ok' : 'bad';
+    else if (locked) cls = k===0 ? 'ok' : 'dim';
+    return `<button class="ans ${cls}" ${locked||picked.includes(k)?'disabled':''} onclick="choose(${k})">
+      <span class="n">${pos+1}</span><span>${esc(answerText(c,k))}</span></button>`;
+  }).join('');
+  let action = '';
+  if (phase === 'result') action = `<button class="btn" onclick="next()">Дальше</button>`;
+  if (phase === 'retry') action = '';
+  el.innerHTML = head + `<div class="card"><span class="tag">${esc(c.cat)}</span>
+      <p class="situation">${esc(c.s)}</p><p class="question">${esc(c.q)}</p></div>
+    <div class="answers">${btns}</div>${fbHTML}${action}
+    ${phase!=='result' ? `<button class="btn ghost" onclick="pause()">⏸ На сегодня</button>` : ''}`;
+}
+
+function newCase(){ attempt = 1; picked = []; fbHTML = ''; shuffle(); renderTrain(); window.scrollTo({top:0,behavior:'smooth'}); }
+
+function choose(k){
+  if (phase === 'result' || picked.includes(k)) return;
+  const c = CASES[S.idx];
+  picked.push(k);
+  if (k === 0) {
+    S.done++; if (attempt === 1) S.firstTry++; S.wrongStreak = 0; markActivity();
+    const others = c.i.map(x => `«${esc(x[0])}» — <span class="trap">${esc(x[1])}</span>`).join('<br>');
+    fbHTML = `<div class="fb ok"><h3>☑️ Да, это факт</h3><p>${esc(c.f)}.</p>
+      <p class="q">Остальное — интерпретации:<br>${others}</p></div>`;
+    phase = 'result'; haptic('success');
+  } else {
+    const [, trap, why] = c.i[k-1];
+    S.wrongStreak++; S.traps[trap] = (S.traps[trap]||0) + 1;
+    let extra = '';
+    if (S.wrongStreak >= 5) { extra = `<div class="fb info"><p>Похоже, сейчас сложно отделить факт. Спроси себя: что увидела бы камера, без мыслей и оценок?</p></div>`; S.wrongStreak = 0; }
+    if (attempt === 1) {
+      fbHTML = `<div class="fb bad"><h3>❌ Не факт. Это <span class="trap">${esc(trap)}</span></h3><p>${esc(why)}</p>
+        <p>${RETRY_HINTS[S.idx % RETRY_HINTS.length]}</p></div>` + extra;
+      attempt = 2; phase = 'retry';
+    } else {
+      S.done++; markActivity();
+      fbHTML = `<div class="fb bad"><h3>❌ Не факт. Это <span class="trap">${esc(trap)}</span></h3><p>${esc(why)}</p>
+        <p class="q">Факт здесь: ${esc(c.f)}.</p></div>` + extra;
+      phase = 'result';
+    }
+    haptic('error');
+  }
+  save(); renderTrain(); renderProgress();
+}
+
+function next(){
+  S.idx++; save();
+  if (S.idx >= CASES.length) { phase = 'final'; renderTrain(); window.scrollTo({top:0}); return; }
+  if (S.idx % MOTIVATION_STEP === 0) { phase = 'motivation'; renderTrain(); return; }
+  phase = 'question'; newCase();
+}
+function newRound(){ S.idx = 0; S.round++; save(); phase = 'question'; newCase(); }
+function pause(){
+  let i; do { i = Math.floor(Math.random()*CLOSINGS.length); } while (CLOSINGS.length > 1 && i === S.lastClosing);
+  S.lastClosing = i; save(); phase = 'pause'; renderTrain();
+}
+
+/* ---------- Прогресс ---------- */
+function renderProgress(){
+  const level = Math.min(MAX_LEVEL, Math.floor(S.done / CASES_PER_LEVEL) + 1);
+  const inLevel = S.done % CASES_PER_LEVEL, frac = inLevel / CASES_PER_LEVEL;
+  const R = 42, C = 2*Math.PI*R, st = streak();
+  const todayN = S.today.d === dkey() ? S.today.n : 0;
+  const acc = S.done ? Math.round(S.firstTry / S.done * 100) : 0;
+  const days = S.days.length;
+
+  const wd = ['Вс','Пн','Вт','Ср','Чт','Пт','Сб'], set = new Set(S.days);
+  let week = '';
+  for (let k=6;k>=0;k--){ const d = new Date(); d.setDate(d.getDate()-k); const on = set.has(dkey(d));
+    week += `<div class="day"><div class="dot ${on?'on':''} ${k===0?'today':''}">${on?'✦':''}</div>${wd[d.getDay()]}</div>`; }
+
+  const traps = Object.entries(S.traps).sort((a,b)=>b[1]-a[1]), maxT = traps.length ? traps[0][1] : 1;
+  const trapsHTML = traps.length
+    ? traps.map(([n,c]) => `<div class="trow"><span class="nm">${esc(n)}</span><span class="tb"><i style="width:${c/maxT*100}%"></i></span><span class="ct">${c}</span></div>`).join('')
+    : `<p class="lead" style="margin:0">Пока ни одной ловушки — отличный старт.</p>`;
+
+  document.getElementById('progress').innerHTML = `
+    <div class="top"><span class="brand">Мой прогресс</span></div>
+    <div class="card"><div class="ringbox">
+      <div class="ring"><svg width="96" height="96"><circle cx="48" cy="48" r="${R}" fill="none" stroke="var(--line)" stroke-width="8"/>
+        <circle cx="48" cy="48" r="${R}" fill="none" stroke="var(--accent)" stroke-width="8" stroke-linecap="round"
+          stroke-dasharray="${C}" stroke-dashoffset="${C*(1-frac)}" style="transition:stroke-dashoffset .6s"/></svg>
+        <div class="lv"><div><b>${level}</b><span>из ${MAX_LEVEL}</span></div></div></div>
+      <div><p class="h1" style="font-size:20px;margin:0 0 4px">🏆 Уровень ${level}</p>
+        <p class="lead">До следующего уровня — ${CASES_PER_LEVEL-inLevel} ${plural(CASES_PER_LEVEL-inLevel,['кейс','кейса','кейсов'])}</p></div>
+    </div></div>
+
+    <div class="tiles">
+      <div class="tile"><div class="ic">📖</div><b>${S.done}</b><span>${plural(S.done,['кейс пройден','кейса пройдено','кейсов пройдено'])}</span></div>
+      <div class="tile"><div class="ic">🔥</div><b>${st}</b><span>${plural(st,['день','дня','дней'])} в ритме ясности</span></div>
+      <div class="tile"><div class="ic">🗓️</div><b>${days}</b><span>${plural(days,['день','дня','дней'])} в практике</span></div>
+      <div class="tile"><div class="ic">🎯</div><b>${acc}%</b><span>верно с первой попытки</span></div>
+    </div>
+
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:baseline">
+        <b>Цель на сегодня</b><span class="counter">${Math.min(todayN,DAILY_GOAL)} из ${DAILY_GOAL}</span></div>
+      <div class="bar" style="margin:10px 0 0"><i style="width:${Math.min(1,todayN/DAILY_GOAL)*100}%;background:${todayN>=DAILY_GOAL?'var(--ok)':'var(--accent)'}"></i></div>
+      <div class="week">${week}</div>
+    </div>
+
+    <p class="sec">Куда чаще уводит ум</p>
+    <div class="card">${trapsHTML}</div>
+    <button class="btn" onclick="tab('train')">▶️ Тренироваться</button>`;
+}
+
+function tab(name){
+  for (const n of ['train','progress']) {
+    document.getElementById(n).classList.toggle('hidden', n !== name);
+    document.getElementById('t-'+n).classList.toggle('on', n === name);
+  }
+  if (name === 'progress') renderProgress();
+  window.scrollTo({top:0});
+}
+
+if (S.idx >= CASES.length) phase = 'final';
+newCase(); renderProgress();
+</script>
+</body>
+</html>
