@@ -140,7 +140,7 @@ details.ctext{border-top:1px solid var(--line);padding-top:16px;font-size:13px}s
 </style>
 </head>
 <body>
-<header class="site-head"><a class="site-brand" href="https://elenaroibul.ru/">Елена Ройбул</a><span class="site-head-note">Пространство самопознания</span></header>
+<header class="site-head"><a class="site-brand" href="/">Елена Ройбул</a><span class="site-head-note">Пространство самопознания</span></header>
 
 
 <main class="wrap" id="app" aria-label="Метапрограммы и ОКЭАН"></main>
@@ -308,7 +308,7 @@ function start(){
   <div class="stack"><h1>Метапрограммы и ОКЭАН</h1></div>
   <div class="card">
     <label class="stack"><span class="small">Как тебя зовут</span><input type="text" id="nm" autocomplete="name" placeholder="Имя и фамилия"></label>
-    <label class="stack"><span class="small">Как с тобой связаться</span><input type="text" id="tg" autocomplete="off" placeholder="Почта, Telegram или телефон"></label>
+    <label class="stack"><span class="small">Твоя почта или Telegram</span><input type="text" id="tg" autocomplete="off" placeholder="name@example.com или @username"><span class="note">Для связи с тобой по результатам. Результат появится здесь, после теста ты сможешь скачать его и отправить Елене. Автоматической отправки нет.</span></label>
     <label class="consent"><input type="checkbox" id="ok"><span>Я даю согласие ИП Ройбул Е. на обработку моих персональных данных и ответов теста для подготовки расшифровки и коучинговой работы. <span class="muted">Текст согласия ниже.</span></span></label>
     <details class="ctext"><summary>Текст согласия</summary>
      <p>Я, указывая своё имя и контакт и отмечая это поле, свободно, своей волей и в своём интересе даю согласие индивидуальному предпринимателю Ройбул Елене Викторовне (ОГРНИП 316784700121447, далее Оператор) на обработку моих персональных данных: имя, контакт для связи, дата прохождения, ответы на вопросы теста и рассчитанные по ним результаты.</p>
@@ -332,7 +332,7 @@ function start(){
   app.querySelectorAll("[data-m]").forEach(b=>b.onclick=()=>{S.mode=b.dataset.m;upd()});
   gob.onclick=()=>{S.name=nm.value.trim();S.tg=tg.value.trim();
     const ok=app.querySelector("#ok").checked;
-    if(!S.name||!S.tg||!ok){const n=app.querySelector("#need");n.hidden=false;n.textContent=!S.name?"Напиши своё имя.":!S.tg?"Напиши, как с тобой связаться.":"Отметь согласие на обработку данных.";if(S.name&&S.tg)app.querySelector("#ok").focus();else (!S.name?nm:tg).focus();return;}
+    if(!S.name||!S.tg||!ok){const n=app.querySelector("#need");n.hidden=false;n.textContent=!S.name?"Напиши своё имя.":!S.tg?"Укажи почту или Telegram.":"Отметь согласие на обработку данных.";if(S.name&&S.tg)app.querySelector("#ok").focus();else (!S.name?nm:tg).focus();return;}
     S.consent=new Date().toISOString();
     S.code="";S.a=S.a.map(()=>0);S.o=S.o.map(()=>0);S.s=SCEN.map(()=>({th:[],r:-1}));S.t0=0;S.t1=0;go(S.mode==="ocean"?"ointro":"intro")};
   app.querySelector("#cc").onclick=()=>go("coach");
@@ -479,11 +479,11 @@ function profileHTML(p,full){
     const top=r.scales.filter(x=>x.m>=4).sort((a,b)=>b.m-a.m);
     h+=`<div class="card"><h2>Метапрограммы</h2>
       ${top.length?`<p class="small">Самые выраженные: <b>${top.map(x=>esc(x.s.name.replace(/ \(.*\)/,""))).join(", ")}</b></p>`:""}
-      <table class="rt"><tr><th>Программа</th><th class="c">Балл</th><th>Степень проявленности</th>${full?`<th class="c">Ситуации</th>`:""}</tr>`;
+      <div class="tblwrap"><table class="rt"><tr><th>Программа</th><th class="c">Балл</th><th>Степень проявленности</th>${full?`<th class="c">Ситуации</th>`:""}</tr>`;
     let need="";
     r.scales.forEach(x=>{ if(x.s.need!==need){ need=x.s.need; h+=`<tr class="grp"><td colspan="${full?4:3}">${esc(need)}</td></tr>`; }
       h+=`<tr${x.lv[0]>=4?' class="hi"':""}><td>${esc(x.s.name.replace(/ \(.*\)/,""))}</td><td class="c num">${x.m.toFixed(1)}</td><td style="color:var(--l${x.lv[0]})">${x.lv[1]}</td>${full?`<td class="c num">${r.offered[x.s.id]?r.hits[x.s.id]+"/"+r.offered[x.s.id]:"—"}</td>`:""}</tr>`;});
-    h+=`</table><p class="note">Балл от 1 до 6. Это не диагноз, а карта для работы с коучем.</p>`;
+    h+=`</table></div><p class="note">Балл от 1 до 6. Это не диагноз, а карта для работы с коучем.</p>`;
     const rc=Object.entries(r.rcount).sort((a,b)=>b[1]-a[1]);
     h+=`<p class="small"><b>Первая реакция в трудной ситуации:</b> ${rc.map(([t,n])=>`${t} ${n}/8`).join(" · ")}</p></div>`;
     if(full){
@@ -494,9 +494,9 @@ function profileHTML(p,full){
   }
   if(p.o){
     const t=scoreOCEAN(p); const c=m=>m>=3.6?4:m>2.4?3:2;
-    h+=`<div class="card"><h2>Пять голосов</h2><table class="rt"><tr><th>Голос</th><th>Уровень</th><th>Аспекты</th></tr>
+    h+=`<div class="card"><h2>Пять голосов</h2><div class="tblwrap"><table class="rt"><tr><th>Голос</th><th>Уровень</th><th>Аспекты</th></tr>
       ${t.map(x=>`<tr><td>${x.t}</td><td style="color:var(--l${c(x.m)})">${olv(x.m)}</td><td class="small">${x.as.map(a=>`${a.x.name}: ${olv(a.m).toLowerCase()}`).join(", ")}</td></tr>`).join("")}
-      </table><p class="note">Перевод утверждений не проверен на русской выборке, используем как ориентир.</p></div>`;
+      </table></div><p class="note">Перевод утверждений не проверен на русской выборке, используем как ориентир.</p></div>`;
   }
   return h;
 }
