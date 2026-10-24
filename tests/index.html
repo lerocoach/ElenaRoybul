@@ -307,14 +307,9 @@ function start(){
   app.innerHTML=`
   <div class="stack"><h1>Метапрограммы и ОКЭАН</h1></div>
   <div class="card">
-    <label class="stack"><span class="small">Как тебя зовут</span><input type="text" id="nm" autocomplete="name" placeholder="Имя и фамилия"></label>
-    <label class="stack"><span class="small">Твоя почта или Telegram</span><input type="text" id="tg" autocomplete="off" placeholder="name@example.com или @username"><span class="note">Для связи с тобой по результатам. Результат появится здесь, после теста ты сможешь скачать его и отправить Елене. Автоматической отправки нет.</span></label>
-    <label class="consent"><input type="checkbox" id="ok"><span>Я даю согласие ИП Ройбул Е. на обработку моих персональных данных и ответов теста для подготовки расшифровки и коучинговой работы. <span class="muted">Текст согласия ниже.</span></span></label>
-    <details class="ctext"><summary>Текст согласия</summary>
-     <p>Я, указывая своё имя и контакт и отмечая это поле, свободно, своей волей и в своём интересе даю согласие индивидуальному предпринимателю Ройбул Елене Викторовне (ОГРНИП 316784700121447, далее Оператор) на обработку моих персональных данных: имя, контакт для связи, дата прохождения, ответы на вопросы теста и рассчитанные по ним результаты.</p>
-     <p>Цель: подготовка расшифровки результатов теста, связь со мной и проведение коучинговых сессий. Действия: сбор, запись, систематизация, хранение, уточнение, использование, удаление. Данные не передаются третьим лицам и не публикуются. Результаты могут использоваться в обезличенном виде для улучшения методики.</p>
-     <p>Я понимаю, что тест не является медицинской или психологической диагностикой. Согласие действует до достижения цели обработки или до его отзыва. Отозвать согласие можно письмом Оператору на lenaroybul@mail.ru; после отзыва данные удаляются в течение 30 дней.</p>
-    </details>
+    <label class="stack"><span class="small">Как тебя зовут (необязательно)</span><input type="text" id="nm" autocomplete="name" placeholder="Имя и фамилия"></label>
+    <label class="consent"><input type="checkbox" id="ok"><span>Я понимаю, что результат теста носит информационный характер и не является диагнозом. <span class="muted">Подробнее ниже.</span></span></label>
+    <details class="ctext"><summary>О результате и сохранении ответов</summary><p>Результат предназначен для самопознания и не является медицинским или психологическим диагнозом.</p><p>Ответы сохраняются в этом браузере. Они не отправляются Елене автоматически. Ты сам(а) решаешь, сохранять ли PDF и делиться ли результатом.</p></details>
     <div class="stack"><span class="small">Что проходим</span>
       <button class="choice" data-m="both"><span class="k">●</span><span><b>Оба теста</b><br><span class="muted small">25–30 минут</span></span></button>
       <button class="choice" data-m="mkp"><span class="k">●</span><span><b>Метапрограммы</b><br><span class="muted small">95 утверждений и 8 ситуаций · 15–20 минут</span></span></button>
@@ -324,15 +319,15 @@ function start(){
   </div>
   <p class="small muted">Ты коуч и тебе прислали код результата? <button class="link" id="cc">Открыть расшифровку</button></p>`;
   const nm=app.querySelector("#nm"),gob=app.querySelector("#go");
-  const tg=app.querySelector("#tg");
+  const tg={value:""};
   nm.value=S.name; tg.value=S.tg||"";
-  tg.oninput=()=>{S.tg=tg.value.trim();upd()};
+  tg.oninput=()=>{S.tg="";upd()};
   const upd=()=>{app.querySelector("#need").hidden=true;app.querySelectorAll("[data-m]").forEach(b=>{const on=b.dataset.m===S.mode;b.classList.toggle("on",on);b.querySelector(".k").textContent=on?"●":"○";})};
   nm.oninput=()=>{S.name=nm.value;upd()};
   app.querySelectorAll("[data-m]").forEach(b=>b.onclick=()=>{S.mode=b.dataset.m;upd()});
-  gob.onclick=()=>{S.name=nm.value.trim();S.tg=tg.value.trim();
+  gob.onclick=()=>{S.name=nm.value.trim();S.tg="";
     const ok=app.querySelector("#ok").checked;
-    if(!S.name||!S.tg||!ok){const n=app.querySelector("#need");n.hidden=false;n.textContent=!S.name?"Напиши своё имя.":!S.tg?"Укажи почту или Telegram.":"Отметь согласие на обработку данных.";if(S.name&&S.tg)app.querySelector("#ok").focus();else (!S.name?nm:tg).focus();return;}
+    if(!ok){const n=app.querySelector("#need");n.hidden=false;n.textContent="Подтверди, что ознакомился(ась) с информацией о тесте.";app.querySelector("#ok").focus();return;}
     S.consent=new Date().toISOString();
     S.code="";S.a=S.a.map(()=>0);S.o=S.o.map(()=>0);S.s=SCEN.map(()=>({th:[],r:-1}));S.t0=0;S.t1=0;go(S.mode==="ocean"?"ointro":"intro")};
   app.querySelector("#cc").onclick=()=>go("coach");
@@ -407,27 +402,12 @@ function ocean(){
 function done(){
   document.onkeydown=null;
   if(!S.code||!S.code.startsWith("ek2")){S.code=encode();save();}
-  const p=decode(S.code); const mail=S.mail||COACH_MAIL;
-  app.innerHTML=`<div class="stack"><span class="eyebrow">Готово</span><h1>Спасибо, ${esc(S.name)}</h1>
-   <p class="muted">Осталось два шага, чтобы коуч получил результат.</p></div>
-  <div class="card steps">
-   <div class="step"><span class="n">1</span><div class="stack"><b>Скачай PDF с результатом</b><button class="btn" id="pdf">Скачать PDF</button><span class="small muted" id="pdfm"></span></div></div>
-   <div class="step"><span class="n">2</span><div class="stack"><b>Отправь PDF на почту коуча</b>
-    <label class="stack"><span class="small muted">Почта твоего коуча</span><input type="text" id="mail" inputmode="email" autocomplete="off"></label>
-    <a class="btn" id="send" target="_blank" rel="noopener" style="text-align:center;text-decoration:none">Открыть письмо коучу</a>
-    <span class="small muted">Откроется почта с готовым письмом. Прикрепи к нему скачанный PDF. Если почта не открылась, напиши на этот адрес сам(а): текст письма уже скопирован.</span>
-    <div class="row"><button class="ghost" id="cpa">Скопировать адрес</button><button class="ghost" id="cp">Скопировать текст письма</button><span class="small muted" id="cpm"></span></div></div></div>
-  </div>
+  const p=decode(S.code);
+  app.innerHTML=`<div class="stack"><span class="eyebrow">Тест завершён</span><h1>${S.name?`Твой результат, ${esc(S.name)}`:"Твой результат"}</h1><p class="muted">Это ориентир для самопознания. Сохрани результат и возвращайся к нему, когда захочешь.</p></div>
   ${profileHTML(p,false)}
+  <div class="card"><h2>Сохрани свой результат</h2><p class="small muted">Скачай PDF на телефон или компьютер. Отправлять его коучу не обязательно.</p><button class="btn" id="pdf">Скачать PDF</button><p class="note" id="pdfm" role="status"></p></div>
+  <div class="card"><span class="eyebrow">По желанию</span><h2>Глубокая расшифровка</h2><p>Персональный разбор твоих результатов с Еленой.</p><p><strong>2 000 ₽</strong><span class="muted"> · срок подготовки до 3 дней</span></p><p class="small muted">Напиши Елене в Telegram и прикрепи PDF с результатами. Там вы согласуете оплату и начало подготовки расшифровки.</p><a class="btn" href="https://t.me/leroxx" target="_blank" rel="noopener noreferrer" style="text-align:center;text-decoration:none">Запросить глубокую расшифровку</a></div>
   <div class="row"><button class="ghost" id="again">Пройти заново</button></div>`;
-  const mi=app.querySelector("#mail"), send=app.querySelector("#send");
-  const link=()=>{send.href=`mailto:${(S.mail||COACH_MAIL).trim().replace(/[^A-Za-z0-9._%+\-@]/g,"")}?subject=${encodeURIComponent("Результат теста — "+S.name)}&body=${encodeURIComponent(msgText())}`;};
-  mi.value=mail; mi.oninput=()=>{S.mail=mi.value.trim();save();link();}; link();
-  const cpy=async(t)=>{const m=app.querySelector("#cpm");
-    try{await navigator.clipboard.writeText(t);m.textContent="Скопировано";}catch(e){m.textContent="Не удалось скопировать: выдели и скопируй вручную";}};
-  app.querySelector("#cp").onclick=()=>cpy(msgText());
-  app.querySelector("#cpa").onclick=()=>cpy((S.mail||COACH_MAIL).trim());
-  send.addEventListener("click",()=>{cpy(msgText())});
   app.querySelector("#again").onclick=()=>{clearDraft();S=blank();render();};
   app.querySelector("#pdf").onclick=e=>makePDF(p,false,S.code,e.currentTarget,app.querySelector("#pdfm"));
 }
@@ -456,15 +436,15 @@ async function makePDF(p,full,code,btn,msg){
   if(!window.html2pdf){msg.textContent="PDF не собрался: не загрузилась библиотека. Обнови страницу и попробуй ещё раз.";return;}
   btn.disabled=true;msg.textContent="Собираю PDF…";
   const el=document.createElement("div");el.className="pdf";
-  el.innerHTML=`<div class="stack"><span class="eyebrow">${full?"Расшифровка для коуча":"Результат теста"} · ${esc(p.d||"")}</span><h1>${esc(p.n||"Клиент")}</h1><p class="muted">Контакт: ${esc(p.tg||"—")}${p.c?" · согласие на обработку данных: "+esc(p.c.slice(0,16).replace("T"," ")):""}</p></div>`
+  el.innerHTML=`<div class="stack"><span class="eyebrow">${full?"Расшифровка для коуча":"Результат теста"} · ${esc(p.d||"")}</span><h1>${esc(p.n||"Клиент")}</h1><p class="muted">Контакт: ${esc(p.tg||"—")}</p></div>`
     +profileHTML(p,full)+`<div class="card" style="flex-direction:row;gap:16px;align-items:center"><img src="${qrImg(reportURL(code||""),3)}" alt="QR-код расшифровки" style="width:130px;height:130px;flex:none"><div class="stack" style="min-width:0"><h3>Расшифровка для коуча</h3><p class="note">Коуч наводит камеру телефона на QR-код и сразу открывает полную расшифровку. Или вставляет код на странице теста.</p><div class="code" style="max-height:none;user-select:text">${esc(code||"")}</div></div></div>`;
   try{
     const blob=await html2pdf().set({margin:[10,10,12,10],image:{type:"jpeg",quality:0.92},html2canvas:{scale:2,backgroundColor:"#FFFFFF"},jsPDF:{unit:"mm",format:"a4"},pagebreak:{mode:["css","legacy"],avoid:[".sc",".flag","tr","h2"]}}).from(el).outputPdf("blob");
     const nm=(p.n||"клиент").replace(/[\\/:*?"<>|]/g,"").slice(0,60);
     const fn=`${full?"Расшифровка":"Результат теста"} — ${nm}.pdf`;
     if(dl) await dl.save({filename:fn,data:blob}); else {const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=fn;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),5000);}
-    msg.textContent=full?"PDF сохранён.":"PDF сохранён. Теперь шаг 2.";
-  }catch(e){msg.textContent=e&&e.code==="declined"?"Скачивание отменено.":e&&e.code==="rate_limited"?"Окно сохранения уже открыто.":"Не получилось сохранить PDF. Отправь коучу письмо со ссылкой, этого достаточно.";}
+    msg.textContent=full?"PDF сохранён.":"PDF сохранён.";
+  }catch(e){msg.textContent=e&&e.code==="declined"?"Скачивание отменено.":e&&e.code==="rate_limited"?"Окно сохранения уже открыто.":"Не получилось сохранить PDF. Попробуй ещё раз или сохрани страницу через меню браузера.";}
   finally{btn.disabled=false;}
 }
 function bar(m,max,lv){const pct=((m-1)/(max-1))*100;return `<div class="bar"><i style="width:${Math.max(2,pct)}%;background:var(--l${lv})"></i></div>`}
